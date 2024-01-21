@@ -4,6 +4,11 @@
 #include <QtGui>
 using namespace std;
 
+const double epsilon = 1e-16;
+double sqr(double x) {
+    return x*x;
+}
+
 /**
  * \brief Bézier curve through Points.
  * \param ps Spanning Points of the Bézier curve
@@ -39,10 +44,10 @@ Rect computeRange(const vector<Point>& route) {
         y0 = p1.y;
     else if (y1<p1.y)
         y1 = p1.y;
-    return Rect::of(x0-1, y0-1, x1+1, y1+1);
+    return Rect::of(x0-0.2, y0-0.2, x1+0.2, y1+0.2);
 }
 
-VectorRace::VectorRace(QWidget *parent) :QWidget(parent) {
+VectorRace::VectorRace(QWidget* parent) :QWidget(parent) {
     setMinimumSize(300, 300);
     setMaximumSize(1800, 1800);
     setWindowTitle(tr("Vector Race!"));
@@ -56,24 +61,52 @@ Rect computeScale(const Rect& range, int width, int height) {
     return { range.x0 -(width/dx-range.dx)/2, range.y1() +(height/dx-range.dy), dx, -dx };
 }
 
+vector<Point> Circle::intersect(const Circle& c2) const {
+    Vector v = c2.center - center;
+    double d = sqrt(v.norm2());
+    if (d < epsilon || min(radius, c2.radius)+d < max(radius, c2.radius) || radius+c2.radius < d)
+        return {};
+    double l = (sqr(radius) -sqr(c2.radius)) / d;
+    double h2 = sqr(radius) -sqr(l);
+    if (h2 < 3*epsilon*(radius*abs(l)+1.0)) {
+        auto p = Point(center);
+        return { p.translate(v.normed()*l) };
+    }
+    const auto e = v*(1/d);
+    const auto b = center.translate(e*l);
+    const auto p = e.perp() * sqrt(h2);
+    return { b.translate(p), b.translate(-p) };
+}
+
+
 void VectorRace::paintEvent(QPaintEvent*) {
     this->scale = computeScale(range, width(), height());
     QPainter p(this);
     p.setPen(Qt::black);
-    const Point& p0 = route[0];
-    int lastX = scale.px(p0.x);  int lastY = scale.py(p0.y);
-    for (double t=0.0; t<=1.0; t+=0.01) {
+    const double dt = 0.002;
+    Point p0 = route[0];
+    const Point& p01 = bezier(route, dt);
+    const auto ps0 = Circle { p0, w }.intersect(Circle { p01, w });
+    Point lastL = ps0[0];  Point lastR = ps0[1];
+    for (double t=dt; t<=1.0+epsilon; t+=dt) {
         const Point p1 = bezier(route, t);
-        int px = scale.px(p1.x);  int py = scale.py(p1.y);
-        p.drawLine(lastX,lastY, px,py);
-        lastX = px;  lastY = py;
+        const auto ps = Circle { p0, w }.intersect(Circle { p1, w });
+        Point pL = ps[0], pR = ps[1];
+        if ((pL-lastL).norm2()>sqr(w)) {
+            // Points need to be swapped
+            swap(pL, pR);
+        }
+        p.drawLine(scale.px(lastL.x),scale.py(lastL.y), scale.px(pL.x),scale.py(pL.y));
+        p.drawLine(scale.px(lastR.x),scale.py(lastR.y), scale.px(pR.x),scale.py(pR.y));
+        p0 = p1;
+        lastL = pL;  lastR = pR;
     }
     p.end();
 }
 
 void VectorRace::evolve() {
     for (uint p=0; p<positions.size(); p++)
-        positions[p].translate(velocities[p]);
+        positions[p] = positions[p].translate(velocities[p]);
     turn = 0;
 }
 
