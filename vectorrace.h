@@ -49,7 +49,7 @@ struct Vector {
 
     [[nodiscard]]
     Vector normed() const {
-        double f = 1/norm2();
+        double f = 1/sqrt(norm2());
         return { x*f, y*f };
     }
 
@@ -80,7 +80,7 @@ Point bezier(const std::vector<Point>& ps, double t=0.5);
 
 struct Circle {
     Point center;
-    long double radius; // >0
+    double radius; // >0
     [[nodiscard]]
     std::vector<Point> intersect(const Circle& circle) const;
 };
@@ -132,14 +132,18 @@ protected:
     void accelerateUp();
     void accelerateDown();
     void proceed();
-    // void reset();
+    void closeSplash();
+    void reset();
 
-    // void loadImages();
+    void paintPost(QPainter& p, const Point& p0, const Point& p1, const QString &label) const;
+
+    void loadImages();
     QPixmap* car = nullptr;
     QPixmap* carLeft = nullptr;
     QPixmap* carUp = nullptr;
     QPixmap* carDown = nullptr;
     double w = 0.05;
+    QPixmap* splashScreen = nullptr;
 
 private:
     std::vector<Point> route = {{0.0, 0.0}, {1.5,0.0}, {1.5,1.0}, {-0.5,0.0},
@@ -153,5 +157,10 @@ private:
     std::vector<uint> winners;
     Rect range = {};
     Rect scale = {};
+    enum State {
+        READY, STARTING, GAME_OVER
+    };
+    State state;
+    QTimer* timer;
 };
 #endif // VECTORRACE_H

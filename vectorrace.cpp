@@ -47,11 +47,27 @@ Rect computeRange(const vector<Point>& route) {
     return Rect::of(x0-0.2, y0-0.2, x1+0.2, y1+0.2);
 }
 
-VectorRace::VectorRace(QWidget* parent) :QWidget(parent) {
-    setMinimumSize(300, 300);
-    setMaximumSize(1800, 1800);
+void VectorRace::loadImages() {
+}
+
+VectorRace::VectorRace(QWidget* parent) :QWidget(parent), state(STARTING) {
+    setMinimumSize(300, 600);
+    setMaximumSize(1800, 2400);
     setWindowTitle(tr("Vector Race!"));
     this->range = computeRange(route);
+    this->timer = new QTimer(this);
+    timer->callOnTimeout(this, QOverload<>::of(&VectorRace::closeSplash));
+    loadImages();
+    reset();
+}
+
+void VectorRace::reset() {
+    state = STARTING;
+    timer->start(3000);
+}
+
+void VectorRace::closeSplash() {
+    state = READY;
 }
 
 VectorRace::~VectorRace() = default;
@@ -88,7 +104,7 @@ void VectorRace::paintEvent(QPaintEvent*) {
     const Point& p01 = bezier(route, dt);
     const auto ps0 = Circle { p0, w }.intersect(Circle { p01, w });
     Point lastL = ps0[0];  Point lastR = ps0[1];
-    for (double t=dt; t<=1.0+epsilon; t+=dt) {
+    for (double t=dt; t<=1.0+dt+epsilon; t+=dt) {
         const Point p1 = bezier(route, t);
         const auto ps = Circle { p0, w }.intersect(Circle { p1, w });
         Point pL = ps[0], pR = ps[1];
@@ -101,7 +117,19 @@ void VectorRace::paintEvent(QPaintEvent*) {
         p0 = p1;
         lastL = pL;  lastR = pR;
     }
+    paintPost(p, route[0], p01, "Start");
+    paintPost(p, bezier(route, 1-dt), route[route.size()-1], "Finish");
     p.end();
+}
+
+void VectorRace::paintPost(QPainter& p, const Point& p0, const Point& p1, const QString& label) const {
+    const auto n = (p1-p0).normed().perp()*w;
+    const Point b = p0.translate(-n);
+    const Point t = p0.translate(n);
+    p.setPen(Qt::red);
+    p.setFont(QFont("arial", 16, QFont::Bold));
+    p.drawLine(scale.px(b.x), scale.py(b.y), scale.px(t.x), scale.py(t.y));
+    p.drawText(scale.px(t.x), scale.py(t.y)-2, label);
 }
 
 void VectorRace::evolve() {
