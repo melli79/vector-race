@@ -11,7 +11,7 @@ double sqr(double x) {
 
 /**
  * \brief Bézier curve through Points.
- * \param ps Spanning Points of the Bézier curve
+ * \param ps Supporting Points of the Bézier curve
  * \param t position parameter (0 -> ps[0], 1 -> ps.last)
  * \return the interpolated Point on the curve.
  */
@@ -20,14 +20,14 @@ Point bezier(const vector<Point>& ps, double t) {
         return ps[0];
     vector<Point> qs(ps.size()-1);
     for (int i=0; i+1<ps.size(); i++) {
-        qs[i] = ps[i].affine(t, ps[i+1]);
+        qs[i] = ps[i].interpolate(t, ps[i+1]);
     }
     while (qs.size()>1) {
         vector<Point> q1s(qs.size()-1);
         for (int i=0; i+1<qs.size(); i++) {
-            q1s[i] = qs[i].affine(t, qs[i+1]);
+            q1s[i] = qs[i].interpolate(t, qs[i+1]);
         }
-        qs = q1s;
+        qs = move(q1s);
     }
     return qs[0];
 }

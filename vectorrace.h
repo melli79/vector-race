@@ -24,7 +24,7 @@ struct Point {
     Vector operator - (const Point& p) const;
 
     [[nodiscard]]
-    Point affine(double t, const Point& p) const;
+    Point interpolate(double t, const Point& p) const;
 };
 
 struct Vector {
@@ -72,7 +72,7 @@ inline Vector Point::operator -(const Point& p) const {
     return { x-p.x, y-p.y };
 }
 
-inline Point Point::affine(double t, const Point& p) const {
+inline Point Point::interpolate(double t, const Point& p) const {
     return Point(*this).translate((p-*this)*t);
 }
 
