@@ -36,7 +36,7 @@ else()
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-	add_executable(vectorRace
+	    add_executable(vectorRace
             ${PROJECT_SOURCES}
         )
     endif()

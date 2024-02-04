@@ -53,7 +53,7 @@ void VectorRace::loadImages() {
 VectorRace::VectorRace(QWidget* parent) :QWidget(parent), state(STARTING) {
     setMinimumSize(300, 600);
     setMaximumSize(1800, 2400);
-    setWindowTitle(tr("Vector Race!"));
+    setWindowTitle("Vector Race!");
     this->range = computeRange(route);
     this->timer = new QTimer(this);
     timer->callOnTimeout(this, QOverload<>::of(&VectorRace::closeSplash));
@@ -80,9 +80,9 @@ Rect computeScale(const Rect& range, int width, int height) {
 vector<Point> Circle::intersect(const Circle& c2) const {
     Vector v = c2.center - center;
     double d = sqrt(v.norm2());
-    if (d < epsilon || min(radius, c2.radius)+d < max(radius, c2.radius) || radius+c2.radius < d)
+    if (d < epsilon || d < abs(radius - c2.radius) || radius+c2.radius < d)
         return {};
-    double l = (sqr(radius) -sqr(c2.radius)) / d;
+    double l = (sqr(d) + sqr(radius) -sqr(c2.radius)) / d;
     double h2 = sqr(radius) -sqr(l);
     if (h2 < 3*epsilon*(radius*abs(l)+1.0)) {
         auto p = Point(center);
