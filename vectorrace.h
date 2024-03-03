@@ -13,6 +13,8 @@ struct Vector;
 struct Point {
     double x, y;
 
+    const static Point ORIGIN;
+
     bool operator <(const Point& p) const {
         return y<p.y || y==p.y&&x<p.x;
     }
@@ -21,14 +23,18 @@ struct Point {
     Point translate(const Vector& v) const;
 
     [[nodiscard]]
-    Vector operator - (const Point& p) const;
+    Vector operator -(const Point& p) const;
 
     [[nodiscard]]
     Point interpolate(double t, const Point& p) const;
+
+    Point scale(double f) const;
 };
 
 struct Vector {
     double x, y;
+    const static Vector ZERO;
+
     Vector operator+(const Vector& v) const {
         return  { x+v.x, y+v.y };
     }
@@ -76,6 +82,10 @@ inline Point Point::interpolate(double t, const Point& p) const {
     return Point(*this).translate((p-*this)*t);
 }
 
+inline Point Point::scale(double f) const {
+    return ORIGIN.translate((*this-ORIGIN)*f);
+}
+
 Point bezier(const std::vector<Point>& ps, double t=0.5);
 
 struct Circle {
@@ -107,8 +117,7 @@ struct Rect {
     }
 };
 
-class VectorRace : public QWidget
-{
+class VectorRace : public QWidget {
     Q_OBJECT
 
 public:
@@ -124,7 +133,11 @@ public:
         return positions.size();
     }
 
+    const static std::vector<QColor> colors;
+
 protected:
+    void placeCar(QPainter& p, Point const& pos, Vector const& v, unsigned n) const;
+
     void evolve();
     // void drawWinning(QPainter& p);
     void accelerateLeft();
@@ -134,7 +147,7 @@ protected:
     void proceed();
     void closeSplash();
     void reset();
-
+    void paintRoute(QPainter& p) const;
     void paintPost(QPainter& p, const Point& p0, const Point& p1, const QString &label) const;
 
     void loadImages();
@@ -146,8 +159,8 @@ protected:
     QPixmap* splashScreen = nullptr;
 
 private:
-    std::vector<Point> route = {{0.0, 0.0}, {1.5,0.0}, {1.5,1.0}, {-0.5,0.0},
-        {-0.5,1.0}, {1.0,1.0}};
+    const static std::vector<Point> route0;
+    std::vector<Point> route;
     std::vector<Point> positions;
     std::vector<Vector>  velocities;
     double ax = 0.0, ay = 0.0;
