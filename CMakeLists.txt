@@ -16,6 +16,10 @@ set(PROJECT_SOURCES
         main.cpp
         vectorrace.cpp
         vectorrace.h
+        geometry.h
+        geometry.cpp
+        bezier.h
+        bezier.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

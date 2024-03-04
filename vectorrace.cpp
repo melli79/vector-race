@@ -1,4 +1,5 @@
 #include "vectorrace.h"
+#include "bezier.h"
 
 #include <iostream>
 #include <QApplication>
@@ -11,28 +12,6 @@ double sqr(double x) {
 
 const Point Point::ORIGIN = { 0.0, 0.0 };
 const Vector Vector::ZERO = { 0.0, 0.0 };
-/**
- * \brief Bézier curve through Points.
- * \param ps Supporting Points of the Bézier curve
- * \param t position parameter (0 -> ps[0], 1 -> ps.last)
- * \return the interpolated Point on the curve.
- */
-Point bezier(const std::vector<Point>& ps, double t) {
-    if (ps.size()==1)
-        return ps[0];
-    std::vector<Point> qs(ps.size()-1);
-    for (int i=0; i+1<ps.size(); i++) {
-        qs[i] = ps[i].interpolate(t, ps[i+1]);
-    }
-    while (qs.size()>1) {
-        std::vector<Point> q1s(qs.size()-1);
-        for (int i=0; i+1<qs.size(); i++) {
-            q1s[i] = qs[i].interpolate(t, qs[i+1]);
-        }
-        qs = std::move(q1s);
-    }
-    return qs[0];
-}
 
 Rect computeRange(const std::vector<Point>& route) {
     double x0 = route[0].x;  double x1 = x0;
@@ -163,23 +142,6 @@ VectorRace::~VectorRace() {
 Rect computeScale(const Rect& range, int width, int height) {
     const double dx = std::min(width/range.dx, height/range.dy);
     return { range.x0 -(width/dx-range.dx)/2, range.y1() +(height/dx-range.dy), dx, -dx };
-}
-
-std::vector<Point> Circle::intersect(const Circle& c2) const {
-    Vector v = c2.center - center;
-    double d = sqrt(v.norm2());
-    if (d < epsilon || d < abs(radius - c2.radius) || radius+c2.radius < d)
-        return {};
-    double l = (sqr(d) + sqr(radius) -sqr(c2.radius)) / d;
-    double h2 = sqr(radius) -sqr(l);
-    if (h2 < 3*epsilon*(radius*abs(l)+1.0)) {
-        auto p = Point(center);
-        return { p.translate(v.normed()*l) };
-    }
-    const auto e = v*(1/d);
-    const auto b = center.translate(e*l);
-    const auto p = e.perp() * sqrt(h2);
-    return { b.translate(p), b.translate(-p) };
 }
 
 const std::vector<QColor> VectorRace::colors = { Qt::green, Qt::cyan, QColor(255,0,255), QColor(192,128,0), Qt::blue, Qt::red };
