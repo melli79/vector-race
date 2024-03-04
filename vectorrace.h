@@ -68,6 +68,16 @@ struct Vector {
     Vector operator-() const {
         return { -x, -y };
     }
+
+    [[nodiscard]]
+    Vector rotate(double angle) const {
+        return rotate(cos(angle), sin(angle));
+    }
+
+    [[nodiscard]]
+    Vector rotate(double c, double s) const {
+        return {c*x-s*y, s*x+c*y };
+    }
 };
 
 inline Point Point::translate(const Vector& v) const {

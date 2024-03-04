@@ -65,8 +65,13 @@ QPixmap* loadCar() {
 QPixmap* loadLeftCar(QPixmap* car) {
     QPixmap* leftCar = new QBitmap(24,12);
     auto p = QPainter(leftCar);
+    auto br = QBrush(Qt::transparent);
+    p.fillRect(0,0, 24,12, br);
+    p.translate(24, 0);
     p.rotate(180);
-    p.drawPixmap(24,0, *car);
+    p.setPen(Qt::black);
+    p.setFont(QFont("Arial", 16, QFont::Bold));
+    p.drawText(0,0, ">>");
     p.end();
     return leftCar;
 }
@@ -74,8 +79,13 @@ QPixmap* loadLeftCar(QPixmap* car) {
 QPixmap* loadUpCar(QPixmap* car) {
     QPixmap* upCar = new QBitmap(12,24);
     auto p = QPainter(upCar);
+    auto br = QBrush(Qt::transparent);
+    p.fillRect(0,0, 12, 24, br);
+    p.translate(12,24);
     p.rotate(-90);
-    p.drawPixmap(12,24, *car);
+    p.setPen(Qt::black);
+    p.setFont(QFont("Arial", 16, QFont::Bold));
+    p.drawText(0,0, ">>");
     p.end();
     return upCar;
 }
@@ -83,8 +93,12 @@ QPixmap* loadUpCar(QPixmap* car) {
 QPixmap* loadDownCar(QPixmap* car) {
     QPixmap* downCar = new QBitmap(12,24);
     auto p = QPainter(downCar);
+    auto br = QBrush(Qt::transparent);
+    p.fillRect(0,0, 24,12, br);
     p.rotate(90);
-    p.drawPixmap(0,0, *car);
+    p.setPen(Qt::black);
+    p.setFont(QFont("Arial", 16, QFont::Bold));
+    p.drawText(0,0, ">>");
     p.end();
     return downCar;
 }
@@ -240,6 +254,16 @@ void VectorRace::paintEvent(QPaintEvent*) {
         if (n==turn)
             v += {ax, ay};
         placeCar(p, pos, v, n++);
+    }
+    auto p0 = positions[turn].translate(velocities[turn]);
+    p.setPen(colors[turn%colors.size()]);
+    for (short y=-1; y<=1; ++y) {
+        p.drawLine(scale.px(p0.x-1), scale.py(p0.y+y), scale.px(p0.x), scale.py(p0.y+y));
+        p.drawLine(scale.px(p0.x), scale.py(p0.y+y), scale.px(p0.x+1), scale.py(p0.y+y));
+    }
+    for (short x=-1; x<=1; ++x) {
+        p.drawLine(scale.px(p0.x+x), scale.py(p0.y-1), scale.px(p0.x+x), scale.py(p0.y));
+        p.drawLine(scale.px(p0.x+x), scale.py(p0.y), scale.px(p0.x+x), scale.py(p0.y+1));
     }
     p.setPen(Qt::black);
     p.setFont(QFont("Arial", 12));
