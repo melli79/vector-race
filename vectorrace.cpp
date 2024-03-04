@@ -4,11 +4,7 @@
 #include <iostream>
 #include <QApplication>
 #include <QtGui>
-
-const double epsilon = 1e-16;
-double sqr(double x) {
-    return x*x;
-}
+#include <sstream>
 
 const Point Point::ORIGIN = { 0.0, 0.0 };
 const Vector Vector::ZERO = { 0.0, 0.0 };
@@ -144,7 +140,8 @@ Rect computeScale(const Rect& range, int width, int height) {
     return { range.x0 -(width/dx-range.dx)/2, range.y1() +(height/dx-range.dy), dx, -dx };
 }
 
-const std::vector<QColor> VectorRace::colors = { Qt::green, Qt::cyan, QColor(255,0,255), QColor(192,128,0), Qt::blue, Qt::red };
+const std::vector<QColor> VectorRace::colors = { Qt::darkBlue, Qt::darkGreen, QColor(128,0,128), QColor(192,128,0), Qt::darkRed, Qt::darkCyan };
+const std::vector<std::string> VectorRace::names = { "blue", "green", "purple", "brown", "red", "cyan" };
 
 void VectorRace::placeCar(QPainter& p, Point const& pos, Vector const& v, unsigned n) const {
     QPixmap const* car;
@@ -230,6 +227,7 @@ void VectorRace::paintEvent(QPaintEvent*) {
     p.setPen(Qt::black);
     p.setFont(QFont("Arial", 12));
     p.drawText(6,12, QString("%1's turn").arg(turn+1));
+    p.drawText(6,24, QString(status.c_str()));
     p.end();
 }
 
@@ -243,9 +241,45 @@ void VectorRace::paintPost(QPainter& p, const Point& p0, const Point& p1, const 
     p.drawText(scale.px(t.x), scale.py(t.y)-2, label);
 }
 
+void VectorRace::collideCars(unsigned i, unsigned j) {
+    int s = sgn((velocities[i]-velocities[j]).dot(velocities[i]) );
+    std::ostringstream sout;
+    if (s>0) {
+        sout << names[i%names.size()] << " crashed into " << names[j%names.size()] << ", ";
+        velocities[j] = velocities[i];
+        velocities[i] = Vector::ZERO;
+    } else {
+        sout << names[j%names.size()] << " crashed into " << names[i%names.size()] << ", ";
+        velocities[i] = velocities[j];
+        velocities[j] = Vector::ZERO;
+    }
+    status += sout.str();
+}
+
+void VectorRace::collideCarWall(unsigned i, double t, int d) {
+    std::ostringstream sout;
+    sout << names[i%names.size()] << " crashed into the " << (d<0 ? "left" : "right") << " wall, ";
+    auto p = bezier(route, t);
+    auto v = (bezier(route, t+0.01)-p).perp().normed();
+    positions[i] = p.translate(v*(w*d));
+    velocities[i] = Vector::ZERO;
+    status += sout.str();
+}
+
 void VectorRace::evolve() {
+    status.clear();
     for (unsigned p=0; p<positions.size(); ++p)
         positions[p] = positions[p].translate(velocities[p]);
+    for (unsigned p=1; p<positions.size(); ++p)
+        for (unsigned q=0; q<p; ++q) {
+            if ((positions[p]-positions[q]).norm2()<0.01)
+                collideCars(p, q);
+        }
+    for (unsigned p=1; p<positions.size(); ++p) {
+        auto pos = findPosition(route, positions[p]);
+        if (abs(pos.d)>=w)
+            collideCarWall(p, pos.t, sgn(pos.d));
+    }
     turn = 0;
 }
 

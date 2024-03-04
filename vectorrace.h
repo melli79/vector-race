@@ -50,9 +50,13 @@ public:
     }
 
     const static std::vector<QColor> colors;
+    const static std::vector<std::string> names;
 
 protected:
     void placeCar(QPainter& p, Point const& pos, Vector const& v, unsigned n) const;
+
+    void collideCars(unsigned i, unsigned j);
+    void collideCarWall(unsigned i, double t, int d);
 
     void evolve();
     // void drawWinning(QPainter& p);

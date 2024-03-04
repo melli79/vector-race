@@ -4,7 +4,12 @@
 
 #ifndef POINT_H
 #define POINT_H
+#include <vector>
 
+const double epsilon = 1e-16;
+inline double sqr(double x) {
+    return x*x;
+}
 
 struct Vector;
 
@@ -82,6 +87,11 @@ struct Vector {
     [[nodiscard]]
     double dot(Vector v) const {
         return x*v.x +y*v.y;
+    }
+
+    [[nodiscard]]
+    Vector operator-(Vector const& v) const {
+        return { x-v.x, y-v.y };
     }
 };
 
