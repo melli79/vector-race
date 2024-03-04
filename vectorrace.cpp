@@ -211,11 +211,11 @@ void VectorRace::placeCar(QPainter& p, Point const& pos, Vector const& v, unsign
     p.drawPixmap(px+offsetX, py+offsetY, *car);
     int vx=int(lround(scale.dx*v.x)),  vy=int(lround(scale.dy*v.y));
     p.drawLine(px, py, px+vx, py+vy);
-    p.drawLine(px+int(0.9*vx-0.1*vy), py+int(0.1*vx+vy), px+vx,py+vy);
-    p.drawLine(px+int(0.9*vx-0.1*vy), py+int(-0.1*vx+vy), px+vx,py+vy);
+    p.drawLine(px+int(0.9*vx+0.1*vy), py+int(0.1*vx+0.9*vy), px+vx,py+vy);
+    p.drawLine(px+int(0.9*vx+0.1*vy), py+int(-0.1*vx+0.9*vy), px+vx,py+vy);
     p.drawLine(px+vx,py+vy, px+2*vx,py+2*vy);
-    p.drawLine(px+int(1.9*vx-0.1*vy), py+int(0.1*vx+2*vy), px+2*vx,py+vy);
-    p.drawLine(px+int(1.9*vx-0.1*vy), py+int(-0.1*vx+2*vy), px+2*vx,py+2*vy);
+    p.drawLine(px+int(1.9*vx+0.1*vy), py+int(0.1*vx+1.9*vy), px+2*vx,py+2*vy);
+    p.drawLine(px+int(1.9*vx+0.1*vy), py+int(-0.1*vx+1.9*vy), px+2*vx,py+2*vy);
 }
 
 void VectorRace::paintRoute(QPainter& p) const {
