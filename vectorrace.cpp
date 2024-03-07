@@ -4,6 +4,7 @@
 #include <iostream>
 #include <QApplication>
 #include <QtGui>
+#include <algorithm>
 #include <sstream>
 
 const Point Point::ORIGIN = { 0.0, 0.0 };
@@ -177,6 +178,29 @@ void VectorRace::placeCar(QPainter& p, Point const& pos, Vector const& v, unsign
     p.drawLine(px+int(1.9*vx+0.1*vy), py+int(-0.1*vx+1.9*vy), px+2*vx,py+2*vy);
 }
 
+QString describe(unsigned pos) {
+    switch (pos) {
+        case 0:
+        case 1: return "Winner";
+        case 2: return "   2nd";
+        case 3: return "   3rd";
+        default: return QString("  %1th").arg(pos);
+    }
+}
+
+void VectorRace::maybePaintWinners(QPainter& p) {
+    if (winners.empty())
+        return;
+    p.setFont(QFont("Arial", 24));
+    int y = 48;  const int x = width()/2-50;
+    unsigned pos = 0;
+    for (unsigned winner : winners) {
+        p.setPen(colors[pos%colors.size()]);
+        p.drawText(x,y, QString("%1: %2").arg(describe(++pos), names[winner%colors.size()].c_str()));
+        y += 24;
+    }
+}
+
 void VectorRace::paintRoute(QPainter& p) const {
     p.setPen(Qt::black);
     const double dt = 0.002;
@@ -203,19 +227,9 @@ void VectorRace::paintRoute(QPainter& p) const {
     paintPost(p, route[route.size()-1], bezier(route, 1+dt), "Finish");
 }
 
-void VectorRace::paintEvent(QPaintEvent*) {
-    this->scale = computeScale(range, width(), height());
-    QPainter p(this);
-    paintRoute(p);
-    unsigned n=0;
-    for (auto const& pos : positions) {
-        auto v = velocities[n];
-        if (n==turn)
-            v += {ax, ay};
-        placeCar(p, pos, v, n++);
-    }
-    auto p0 = positions[turn].translate(velocities[turn]);
-    p.setPen(colors[turn%colors.size()]);
+void VectorRace::drawAccelerationGrid(QPainter &p, unsigned currentPlayer) {
+    auto p0 = positions[currentPlayer].translate(velocities[currentPlayer]);
+    p.setPen(colors[currentPlayer%colors.size()]);
     for (short y=-1; y<=1; ++y) {
         p.drawLine(scale.px(p0.x-1), scale.py(p0.y+y), scale.px(p0.x), scale.py(p0.y+y));
         p.drawLine(scale.px(p0.x), scale.py(p0.y+y), scale.px(p0.x+1), scale.py(p0.y+y));
@@ -224,10 +238,39 @@ void VectorRace::paintEvent(QPaintEvent*) {
         p.drawLine(scale.px(p0.x+x), scale.py(p0.y-1), scale.px(p0.x+x), scale.py(p0.y));
         p.drawLine(scale.px(p0.x+x), scale.py(p0.y), scale.px(p0.x+x), scale.py(p0.y+1));
     }
-    p.setPen(Qt::black);
-    p.setFont(QFont("Arial", 12));
-    p.drawText(6,12, QString("%1's turn").arg(turn+1));
-    p.drawText(6,24, QString(status.c_str()));
+}
+
+void VectorRace::placeCars(QPainter& p) {
+    unsigned n=0;
+    for (auto const& pos : positions) {
+        auto v = velocities[n];
+        if (n==turn)
+            v += {ax, ay};
+        placeCar(p, pos, v, n++);
+    }
+    if (turn<positions.size())
+        drawAccelerationGrid(p, turn);
+}
+
+void VectorRace::paintEvent(QPaintEvent*) {
+    this->scale = computeScale(range, width(), height());
+    QPainter p(this);
+    paintRoute(p);
+    if (state!=GAME_OVER) {
+        placeCars(p);
+        p.setPen(Qt::black);
+        p.setFont(QFont("Arial", 12));
+        p.drawText(6,12, QString("%1's turn").arg(names[turn%names.size()].c_str()));
+        p.drawText(6,24, QString(log.c_str()));
+        double pos = 0.0;
+        for (auto const& p : positions) {
+            double pos1 = findPosition(route, p).t;
+            if (pos<pos1)
+                pos = pos1;
+        }
+        p.drawText(6,36, QString("position: %1").arg(computeLength(route, pos)/(6*w), 5,'f',2));
+    }
+    maybePaintWinners(p);
     p.end();
 }
 
@@ -253,42 +296,59 @@ void VectorRace::collideCars(unsigned i, unsigned j) {
         velocities[i] = velocities[j];
         velocities[j] = Vector::ZERO;
     }
-    status += sout.str();
+    log += sout.str();
 }
 
 void VectorRace::collideCarWall(unsigned i, double t, int d) {
     std::ostringstream sout;
-    sout << names[i%names.size()] << " crashed into the " << (d<0 ? "left" : "right") << " wall, ";
+    sout << names[i%names.size()] << " crashed into the " << (d<0 ? "right" : "left") << " wall, ";
     auto p = bezier(route, t);
     auto v = (bezier(route, t+0.01)-p).perp().normed();
     positions[i] = p.translate(v*(w*d));
     velocities[i] = Vector::ZERO;
-    status += sout.str();
+    log += sout.str();
+}
+
+void VectorRace::addWinner(unsigned player) {
+    if (std::find(winners.begin(), winners.end(), player)==winners.end()) {
+        winners.push_back(player);
+        velocities[player] = Vector::ZERO;
+        positions[player].x += 1.0;
+    }
 }
 
 void VectorRace::evolve() {
-    status.clear();
+    log.clear();
     for (unsigned p=0; p<positions.size(); ++p)
         positions[p] = positions[p].translate(velocities[p]);
-    for (unsigned p=1; p<positions.size(); ++p)
+    for (unsigned p=0; p<positions.size(); ++p)
         for (unsigned q=0; q<p; ++q) {
             if ((positions[p]-positions[q]).norm2()<0.01)
                 collideCars(p, q);
         }
-    for (unsigned p=1; p<positions.size(); ++p) {
+    for (unsigned p=0; p<positions.size(); ++p) {
         auto pos = findPosition(route, positions[p]);
         if (abs(pos.d)>=w)
             collideCarWall(p, pos.t, sgn(pos.d));
+        else if (pos.t>=1)
+            addWinner(p);
     }
     turn = 0;
+    while (turn<positions.size() && std::find(winners.begin(), winners.end(), turn)!=winners.end()) {
+        ++turn;
+    }
 }
 
 void VectorRace::proceed() {
-    if (turn>=positions.size())
+    if (state==GAME_OVER || turn>=positions.size()) {
+        state = GAME_OVER;
         return;
+    }
     velocities[turn] += {ax, ay};
     ax = 0.0;  ay = 0.0;
-    ++turn;
+    do {
+        ++turn;
+    } while (turn<positions.size() && std::find(winners.begin(), winners.end(), turn)!=winners.end());
     if (turn>=positions.size())
         evolve();
     update();

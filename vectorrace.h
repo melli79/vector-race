@@ -54,9 +54,12 @@ public:
 
 protected:
     void placeCar(QPainter& p, Point const& pos, Vector const& v, unsigned n) const;
+    void maybePaintWinners(QPainter & painter);
+    void paintRoute(QPainter& p) const;
 
     void collideCars(unsigned i, unsigned j);
     void collideCarWall(unsigned i, double t, int d);
+    void addWinner(unsigned player);
 
     void evolve();
     // void drawWinning(QPainter& p);
@@ -67,7 +70,11 @@ protected:
     void proceed();
     void closeSplash();
     void reset();
-    void paintRoute(QPainter& p) const;
+
+    void drawAccelerationGrid(QPainter &p, unsigned currentPlayer);
+
+    void placeCars(QPainter &p);
+
     void paintPost(QPainter& p, const Point& p0, const Point& p1, const QString &label) const;
 
     void loadImages();
@@ -86,7 +93,7 @@ private:
     double ax = 0.0, ay = 0.0;
     uint step = 0;
     uint turn = 0;
-    std::string status;
+    std::string log;
     std::vector<uint> winners;
     Rect range = {};
     Rect scale = {};

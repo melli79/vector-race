@@ -49,3 +49,15 @@ Position findPosition(std::vector<Point> const& route, Point const& p) {
     int s = sgn((p-p0).dot((bezier(route, tOpt+dt0) -p0).perp()));
     return { tOpt, s*sqrt(d2min) };
 }
+
+double computeLength(std::vector<Point> const& route, double end) {
+    double len = 0.0;
+    Point lastPos = route[0];
+    double dt = 0.001;
+    for (double t=0; t<=end+epsilon; t+=dt) {
+        Point pos = bezier(route, t);
+        len += sqrt((pos-lastPos).norm2());
+        lastPos = pos;
+    }
+    return len;
+}

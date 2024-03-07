@@ -30,5 +30,6 @@ inline int sgn(double x) {
 
 Position findPosition(std::vector<Point> const& route, Point const& p);
 
+double computeLength(std::vector<Point> const& route, double end);
 
 #endif //BEZIER_H
