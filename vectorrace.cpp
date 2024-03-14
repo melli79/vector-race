@@ -27,55 +27,23 @@ Rect computeRange(const std::vector<Point>& route) {
 }
 
 QPixmap* loadCar() {
-    QPixmap* car = new QBitmap(24,12);
-    auto p = QPainter(car);
-    auto br = QBrush(Qt::transparent);
-    p.fillRect(0,0, 24,12, br);
-    p.setPen(Qt::black);
-    p.setFont(QFont("Arial", 16, QFont::Bold));
-    p.drawText(0,12, ">>");
-    p.end();
+    QPixmap* car = new QBitmap("./car.png");
+    qDebug() << *car;
     return car;
 }
 
 QPixmap* loadLeftCar(QPixmap* car) {
-    QPixmap* leftCar = new QBitmap(24,12);
-    auto p = QPainter(leftCar);
-    auto br = QBrush(Qt::transparent);
-    p.fillRect(0,0, 24,12, br);
-    p.translate(24, 0);
-    p.rotate(180);
-    p.setPen(Qt::black);
-    p.setFont(QFont("Arial", 16, QFont::Bold));
-    p.drawText(0,0, ">>");
-    p.end();
+    QPixmap* leftCar = new QBitmap("./carleft.png");
     return leftCar;
 }
 
 QPixmap* loadUpCar(QPixmap* car) {
-    QPixmap* upCar = new QBitmap(12,24);
-    auto p = QPainter(upCar);
-    auto br = QBrush(Qt::transparent);
-    p.fillRect(0,0, 12, 24, br);
-    p.translate(12,24);
-    p.rotate(-90);
-    p.setPen(Qt::black);
-    p.setFont(QFont("Arial", 16, QFont::Bold));
-    p.drawText(0,0, ">>");
-    p.end();
+    QPixmap* upCar = new QBitmap("./carUp.png");
     return upCar;
 }
 
 QPixmap* loadDownCar(QPixmap* car) {
-    QPixmap* downCar = new QBitmap(12,24);
-    auto p = QPainter(downCar);
-    auto br = QBrush(Qt::transparent);
-    p.fillRect(0,0, 24,12, br);
-    p.rotate(90);
-    p.setPen(Qt::black);
-    p.setFont(QFont("Arial", 16, QFont::Bold));
-    p.drawText(0,0, ">>");
-    p.end();
+    QPixmap* downCar = new QBitmap("./carDown");
     return downCar;
 }
 
